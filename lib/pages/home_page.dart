@@ -1,4 +1,6 @@
 import 'package:crypto_stats/components/crypto_list_tile.dart';
+import 'package:crypto_stats/model/crypto_listing_data.dart';
+import 'package:crypto_stats/model/crypto_model.dart';
 import 'package:crypto_stats/theme/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -10,20 +12,31 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  //late Future<List<CryptoListTile>> cryptioListTile;
+  late Future<List<CryptoListingData>> cryptoListingData;
 
-  // @override
-  // void initState() {
-  //   // TODO: implement initState
-  //   super.initState();
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
 
-  //   cryptioListTile = getCryptoStats();
-  // }
+    cryptoListingData = getCryptoStats();
+  }
 
-  // void getCryptoStats() async {
-  //   final response = await http.get();
+  Future<List<CryptoListingData>> getCryptoStats() async {
+    final response = await http.get(
+        Uri.parse(
+          "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
+        ),
+        headers: CryptoModel.apiKey);
+    //print(response);
+    final cryptoData = jsonDecode(response.body);
 
-  // }
+    final cryptoListing = (cryptoData["data"] as List<dynamic>).map((item) {
+      return CryptoListingData.fromData(item);
+    }).toList();
+    // print(cryptoListing);
+    return cryptoListing;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +59,7 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(color: Colors.yellow, letterSpacing: 4),
         ),
         bottom: PreferredSize(
+          preferredSize: Size(double.infinity, 100),
           child: ListTile(
             title: Text(
               "Il mio saldo",
@@ -56,7 +70,6 @@ class _HomePageState extends State<HomePage> {
               style: TextStyle(fontSize: 40, fontWeight: FontWeight.w500),
             ),
           ),
-          preferredSize: Size(double.infinity, 100),
         ),
       ),
       body: Container(
@@ -65,9 +78,55 @@ class _HomePageState extends State<HomePage> {
           decoration: BoxDecoration(
             color: ThemeColors.cardBg,
           ),
+          child: Column(
+            children: [
+              PreferredSize(
+                preferredSize: Size(double.infinity, 200),
+                child: ListTile(
+                  title: Text(
+                    "Gainers & Losers",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    "Basato sulle top 100 coins",
+                    style: TextStyle(fontSize: 14, color: Colors.white38),
+                  ),
+                  trailing: Text(
+                    "Mostra tutte",
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              Divider(),
+              Expanded(
+                child: body(),
+              )
+            ],
+          ),
           //child: Text("hello Crypto"),
         ),
       ),
+    );
+  }
+
+  Widget body() {
+    return FutureBuilder<List<CryptoListingData>>(
+      future: cryptoListingData,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return Center(child: CircularProgressIndicator());
+        } else {
+          return ListView.separated(
+              itemBuilder: (context, index) => CryptoListTile(
+                    symbol: snapshot.data![index].symbol,
+                    name: snapshot.data![index].name,
+                    price: snapshot.data![index].price,
+                    variation24H: snapshot.data![index].variation24H,
+                  ),
+              separatorBuilder: (contex, index) => Divider(),
+              itemCount: 10);
+        }
+      },
     );
   }
 }
