@@ -28,11 +28,11 @@ class CryptoListTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            "\$$price",
+            "\$${price.toStringAsFixed(2)}",
             style: TextStyle(fontSize: 17),
           ),
           Text(
-            "$variation24H%",
+            "${variation24H.toStringAsFixed(2)}%",
             style: TextStyle(
                 color: variation24H >= 0 ? Colors.green : Colors.red,
                 fontSize: 14),

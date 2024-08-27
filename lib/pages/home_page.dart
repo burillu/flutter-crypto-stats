@@ -1,10 +1,8 @@
 import 'package:crypto_stats/components/crypto_list_tile.dart';
 import 'package:crypto_stats/model/crypto_listing_data.dart';
-import 'package:crypto_stats/model/crypto_model.dart';
+import 'package:crypto_stats/repository/crypto_listing_repository.dart';
 import 'package:crypto_stats/theme/colors.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class HomePage extends StatefulWidget {
   @override
@@ -19,23 +17,13 @@ class _HomePageState extends State<HomePage> {
     // TODO: implement initState
     super.initState();
 
-    cryptoListingData = getCryptoStats();
+    cryptoListingData = CryptoListingRepository.all();
   }
 
-  Future<List<CryptoListingData>> getCryptoStats() async {
-    final response = await http.get(
-        Uri.parse(
-          "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest",
-        ),
-        headers: CryptoModel.apiKey);
-    //print(response);
-    final cryptoData = jsonDecode(response.body);
-
-    final cryptoListing = (cryptoData["data"] as List<dynamic>).map((item) {
-      return CryptoListingData.fromData(item);
-    }).toList();
-    // print(cryptoListing);
-    return cryptoListing;
+  void refreshStats() {
+    setState(() {
+      cryptoListingData = CryptoListingRepository.all();
+    });
   }
 
   @override
@@ -44,7 +32,7 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.refresh),
-          onPressed: () {},
+          onPressed: refreshStats,
         ),
         actions: [
           CircleAvatar(
@@ -124,7 +112,7 @@ class _HomePageState extends State<HomePage> {
                     variation24H: snapshot.data![index].variation24H,
                   ),
               separatorBuilder: (contex, index) => Divider(),
-              itemCount: 10);
+              itemCount: snapshot.data!.length);
         }
       },
     );
